@@ -1,0 +1,24 @@
+# Blueprint: https://render.com/docs/blueprint-spec
+# После деплоя задайте NEXT_PUBLIC_* в Dashboard (или при первом apply Blueprint).
+
+services:
+  - type: web
+    name: objects-tasks-crm
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /login
+    envVars:
+      - key: NODE_VERSION
+        value: "22.22.0"
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      # Заполнить в Render Dashboard значениями из Supabase → Settings → API
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false

@@ -1,0 +1,51 @@
+---
+description: Supabase - RLS, миграции, секреты, статусы задач
+globs: supabase/**/*.{sql,toml}
+alwaysApply: false
+---
+
+# supabase/
+
+Rule: `.cursor/rules/(architecture)/rule.mdc`
+
+## Роль
+
+Схема, RLS, функции и сиды — источник правды по доступу и переходам статусов.
+
+```
+supabase/
+├── config.toml
+├── migrations/           # SQL, нумерованные
+└── seed.sql              # опционально: объекты/задачи для демо
+```
+
+## Обязательные инварианты ТЗ
+
+1. **RLS включён** на `objects`, `tasks`, `task_status_history`, `profiles` (и связанных).
+2. Исполнитель читает только **свои** задачи и объекты, где у него есть задачи.
+3. Постановщик видит и меняет всё в рамках продукта.
+4. Запрещённый переход статуса **не проходит** на стороне БД (check + функция/trigger), даже при ручном запросе с anon-ключом.
+5. История: клиент **не** может update/delete; insert только из доверенной DB-логики.
+6. Открытый signup выключен (`enable_signup = false` или эквивалент в Auth settings).
+7. Во фронт и git — только URL + anon key. `service_role` — никогда.
+
+## Роли в данных
+
+Профиль пользователя (`profiles.role`): `manager` | `executor`.
+Связь с `auth.users` по `id`.
+
+## Переходы (должны совпадать с UI)
+
+| Из | В | Кто | Условие |
+| -- | - | --- | ------- |
+| — | `new` | manager | создание |
+| `new` | `in_progress` | assigned executor | — |
+| `in_progress` | `review` | assigned executor | — |
+| `review` | `accepted` | manager | — |
+| `review` | `rework` | manager | комментарий обязателен |
+| `rework` | `in_progress` | assigned executor | — |
+
+## Секреты
+
+- `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` — только локально для админ-скриптов / Dashboard, в `.gitignore`

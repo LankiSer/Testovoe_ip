@@ -1,0 +1,25 @@
+---
+description: Cross-cutting frontend - formatters, status labels
+globs: src/common/**
+alwaysApply: false
+---
+
+# common/
+
+Rule: `.cursor/rules/(architecture)/rule.mdc`
+
+## Роль слоя
+
+`src/common/` — логика **без** привязки к одному экрану.
+
+| Модуль | Путь | Назначение |
+| ------ | ---- | ---------- |
+| Dates | `formatters/date/` | `DateFormatUtility` |
+| Status | `formatters/task-status/` | лейблы/цвета статусов |
+| Constants | `constants/` | роли, статусы, переходы (для UI) |
+| Transitions | `task-transitions/` | какие кнопки показать (зеркало БД, не замена) |
+
+Класс `{Concept}{Action}Utility`, `static index(...)`, файл `{action}.ts`.
+
+**Не** импортировать `app/` из `common/`.
+Карта переходов в `common` — только для UI; запрет на БД остаётся главным.

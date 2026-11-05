@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Мини-CRM «Объекты и задачи»
 
-## Getting Started
+React + TypeScript (Next.js App Router) + Supabase + Mantine.
 
-First, run the development server:
+Постановщик управляет объектами и задачами, исполнитель видит только свои задачи и объекты с ними, двигает статусы по разрешённым переходам. Права и переходы закрыты **RLS и SQL-функцией** `transition_task`, а не только UI.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Стек
+
+- Next.js 16, React 19, TypeScript
+- Supabase Auth + Postgres + RLS
+- Mantine UI
+- Деплой: [Render](https://render.com) (Web Service)
+
+## Быстрый старт (локально)
+
+1. Скопируйте `.env.example` → `.env.local` и заполните:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`SUPABASE_SERVICE_ROLE_KEY` / `sb_secret_*` **не** кладите в `NEXT_PUBLIC_*` и не коммитьте.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. Установите зависимости и запустите:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+Откройте [http://localhost:3000](http://localhost:3000).
 
-To learn more about Next.js, take a look at the following resources:
+## Деплой на Render
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+В репозитории есть `render.yaml` (Blueprint).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Вариант A — Blueprint
 
-## Deploy on Vercel
+1. Запушьте код на GitHub.
+2. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** → выберите репозиторий.
+3. При создании сервиса задайте переменные (или после в **Environment**):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Key | Value |
+| --- | ----- |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://….supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon / legacy JWT или publishable key |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`NODE_VERSION`, `NODE_ENV` уже в `render.yaml`. Service role на Render **не** нужен.
+
+4. Дождитесь Deploy. URL вида `https://objects-tasks-crm.onrender.com`.
+
+### Вариант B — вручную (Web Service)
+
+| Поле | Значение |
+| ---- | -------- |
+| Runtime | Node |
+| Build Command | `npm ci && npm run build` |
+| Start Command | `npm start` |
+| Health Check Path | `/login` |
+
+Те же env, что выше. Node: `22.22.0` (файл `.node-version` / `engines` в `package.json`).
+
+### После деплоя — Supabase Auth
+
+В Supabase → **Authentication** → **URL Configuration**:
+
+- **Site URL** — URL приложения на Render
+- **Redirect URLs** — добавьте `https://ваш-сервис.onrender.com/**`
+
+Отключите открытую регистрацию: Authentication → Providers / settings → disable sign ups.
+
+На бесплатном плане Render сервис может «засыпать» после простоя — первый запрос после паузы бывает медленным.
+
+## База данных
+
+Миграции в `supabase/migrations/`.
+
+Что делают:
+
+- таблицы `profiles`, `objects`, `tasks`, `task_status_history`
+- RLS: исполнитель не читает чужие задачи/лишние объекты
+- смена статуса только через RPC `transition_task`
+- историю нельзя insert/update/delete клиентом
+
+## Тестовые пользователи
+
+```bash
+node scripts/create-users.mjs
+```
+
+| Email | Пароль | Роль |
+| ----- | ------ | ---- |
+| `manager@crm.test` | `Manager123!` | постановщик |
+| `executor1@crm.test` | `Executor123!` | исполнитель |
+| `executor2@crm.test` | `Executor123!` | исполнитель |
+
+## Экраны
+
+- `/login` — вход
+- `/board` — общая доска (канбан)
+- `/my-tasks` — задачи, назначенные вам
+- `/objects` — список объектов
+- `/objects/[id]` — объект и задачи
+- `/tasks/[id]` — задача, действия, история
+
+## Безопасность (кратко)
+
+Интерфейс показывает только доступные кнопки. Даже при запросе к Supabase напрямую с anon-ключом:
+
+- чужие задачи исполнителю не отдаст RLS;
+- запрещённый переход статуса не пройдёт через `transition_task`;
+- подделать историю статусов через API нельзя.

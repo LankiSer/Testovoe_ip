@@ -1,0 +1,43 @@
+---
+description: Infrastructure - Supabase clients и доменные сервисы
+globs: src/shared/**
+alwaysApply: false
+---
+
+# shared/
+
+Rule: `.cursor/rules/(architecture)/rule.mdc` · Supabase: `.cursor/rules/supabase/rule.mdc`
+
+## Роль слоя
+
+`src/shared/` — клиенты Supabase и сервисы домена.
+
+```
+shared/
+├── api/
+│   ├── supabase/
+│   │   ├── client.ts          # browser (anon)
+│   │   ├── server.ts          # server components / route handlers
+│   │   └── middleware.ts      # session refresh (если нужен)
+│   ├── objects/
+│   │   ├── dtos/
+│   │   └── services/
+│   ├── tasks/
+│   │   ├── dtos/
+│   │   └── services/
+│   └── profiles/
+│       ├── dtos/
+│       └── services/
+```
+
+## Правила
+
+- Сервис — класс, публичный метод `index`
+- DTO — типы строк/пейлоадов, имена близко к таблицам (`objects`, `tasks`, `task_status_history`)
+- `shared/` не импортирует страницы из `app/`
+- Смена статуса задачи — через RPC/функцию БД (не «голый» update status с клиента), если так зафиксировано в миграциях
+- История — только чтение с клиента; insert делает триггер/функция на стороне БД
+
+## Эталоны
+
+`src/shared/api/supabase/client.ts` · `src/shared/api/tasks/services/read.ts` · `src/shared/api/tasks/services/transition.ts`

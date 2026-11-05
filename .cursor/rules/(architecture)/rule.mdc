@@ -1,0 +1,75 @@
+---
+description: Общие правила нейминга, структуры папок и паттерны . ( ) [ ] для Next.js + Mantine + Supabase
+alwaysApply: true
+---
+
+# architecture - нейминг
+
+Отвечай пользователю всегда на русском. Код, пути и идентификаторы не переводить.
+
+## Паттерны имён папок
+
+| Маркер | Смысл | Примеры |
+| ------ | ----- | ------- |
+| **`.`** | Служебное / приватное (не сегмент URL) | `.cursor/`, `.partials/` |
+| **`()`** | Группа/контекст, **не** сегмент URL | `(cabinet)/`, `(auth)/` |
+| **`[]`** | Динамический сегмент (param) | `[id]/` |
+
+### `()` - group
+
+- `app/(auth)/login/page.tsx` → `/login`
+- `app/(cabinet)/objects/page.tsx` → `/objects`
+- Export **не** включает скобки: `(avatar)` → `UserAvatarCard`
+
+### `[]` - dynamic
+
+- `app/(cabinet)/tasks/[id]/page.tsx` → `/tasks/:id`
+- `shared/api/tasks/services/[id]/read.ts` — одна запись
+
+## Структура `src/`
+
+```
+src/
+├── app/          → маршруты Next.js (page, layout, loading, error)
+├── components/   → продуктовые контролы
+├── common/       → formatters, helpers
+├── config/       → providers, theme, env
+└── shared/       → Supabase, доменные сервисы
+```
+
+| Слой | Путь | Пример |
+| ---- | ---- | ------ |
+| **Route** | `app/(group)/` | `ObjectsPage`, `TaskPage` |
+| **Component** | `components/` | `TaskCard` в `components/display/task/card/component.tsx` |
+| **Cross-cutting** | `common/` | `DateFormatUtility`, `TaskStatusLabelUtility` |
+| **Infrastructure** | `shared/` | `TasksReadService`, supabase client |
+| **Config** | `config/` | `MantineProvider` обёртка |
+
+## Имена файлов
+
+| Артефакт | Файл | Export |
+| -------- | ---- | ------ |
+| Страница | `app/.../page.tsx` | default function |
+| Layout | `app/.../layout.tsx` | default function |
+| Компонент | `components/{cat}/{name}/component.tsx` | `{Name}` |
+| Сервис | `shared/api/{domain}/services/{action}.ts` | `{Domain}{Action}Service` |
+| DTO / types | `shared/api/{domain}/dtos/{action}.ts` | `{Domain}{Action}Dto` |
+| Утилита | `common/.../{action}.ts` | `{Domain}{Sub?}{Action}Utility` |
+| Константа | `common/constants/{name}.ts` | `{Domain}{Sub?}{Name}Constant` |
+| Публичный метод | service / utility | `index` |
+
+## Импорты
+
+- Только `@/` — relative запрещены
+- Mantine: `from "@mantine/core"`, `from "@mantine/hooks"`, `from "@mantine/form"`, `from "@mantine/notifications"`
+- Полный путь с `[id]/`, `(cabinet)/` как в FS
+
+## Безопасность (обязательно)
+
+- Секреты (`SUPABASE_SERVICE_ROLE_KEY` и т.п.) только на сервере / в CI, не в клиентском бандле и не в git
+- Во фронте только `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- Права — RLS и SQL-функции; UI лишь отражает доступные действия
+
+## Тесты
+
+- Зеркало `src/` в `tests/` при появлении тестов

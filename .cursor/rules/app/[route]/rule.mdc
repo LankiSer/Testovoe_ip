@@ -1,0 +1,42 @@
+---
+description: Маршруты Next.js App Router - страницы, layouts, группы CRM
+globs: src/app/**
+alwaysApply: false
+---
+
+# app/{route}
+
+Rule: `.cursor/rules/(architecture)/rule.mdc` · UI: `.cursor/rules/(ui)/rule.mdc`
+
+## Роль слоя
+
+`src/app/` — только маршруты. Данные — из `shared/api/**/services`.
+
+```
+app/
+├── layout.tsx                 # html, MantineProvider, шрифты
+├── globals.css
+├── (auth)/
+│   └── login/page.tsx         # email + password
+└── (cabinet)/
+    ├── layout.tsx             # shell: nav, выход, роль
+    ├── objects/
+    │   ├── page.tsx           # список объектов
+    │   └── [id]/page.tsx      # карточка объекта + задачи
+    ├── tasks/
+    │   └── [id]/page.tsx      # карточка задачи + действия + история
+    └── my-tasks/
+        └── page.tsx           # «Мои задачи» (исполнитель; постановщик тоже может)
+```
+
+## Правила
+
+- `page.tsx` — композиция секций; данные через `*Service.index`
+- Server Component по умолчанию; `"use client"` для форм, кнопок смены статуса, Mantine overlays
+- Группы: `(auth)` вход, `(cabinet)` после auth
+- Неавторизованных — редирект на `/login`; открытой регистрации нет
+- UI показывает только действия, доступные роли + текущему статусу (зеркало правил БД)
+
+## Эталоны
+
+`src/app/(auth)/login/page.tsx` · `src/app/(cabinet)/objects/page.tsx` · `src/app/(cabinet)/tasks/[id]/page.tsx`

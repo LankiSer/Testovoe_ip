@@ -1,0 +1,55 @@
+---
+description: Контракт Mantine - импорты, тема, продуктовые компоненты
+globs: src/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# (ui) - Mantine
+
+Rule: `.cursor/rules/(architecture)/rule.mdc`
+
+Документация: https://mantine.dev
+
+## Импорт
+
+```tsx
+import { Button, Card, Stack, Text, TextInput, Textarea, Select, Badge, Table } from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { notifications } from "@mantine/notifications";
+import { modals } from "@mantine/modals";
+```
+
+## Тема
+
+- Один `MantineProvider` в `config/providers` / корневом layout
+- Цвета и радиусы — через theme object, не размазывать magic hex по экранам
+- Дизайн не «вау»: аккуратно, читаемо, без purple/neon градиентов и лишних glass-эффектов
+
+## Паттерны CRM
+
+| Задача | Контрол |
+| ------ | ------- |
+| Список | `Table` или простой `Stack` + строки |
+| Форма | `@mantine/form` + `TextInput` / `Textarea` / `Select` |
+| Статус | `Badge` + маппинг из `common` |
+| Действие по статусу | `Button` — только если разрешено ролью+статусом |
+| Подтверждение / комментарий к доработке | `modals.open` + обязательный `Textarea` |
+| Ошибки API | `notifications.show` |
+
+## Продуктовые компоненты
+
+Свои блоки — не раздувать `page.tsx`:
+
+```
+src/components/{category}/{name}/component.tsx
+```
+
+Категории: `actions`, `display`, `forms`, `overlays`, `layout`.
+
+Примеры: `components/display/object/card`, `components/forms/task/create`, `components/display/task/history`.
+
+## Запрещено
+
+- Тянуть другую UI-библиотеку параллельно с Mantine без явной нужды
+- Прятать «безопасность» только скрытием кнопок — база всё равно должна отказать
+- Карточки ради карточек: Card — когда это контейнер списка/формы, не декор
